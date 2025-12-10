@@ -8,70 +8,74 @@ const FoodModel = require('./Food')
 const app = express();
 const PORT = process.env.PORT || 3000
 
-const mongoUrl = process.env.MONGODB_URL || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/foodDB'
-mongoose.connect(mongoUrl)
-    .then(() => {
-        console.log('MongoDB Connected Successfully');
-    })
-    .catch((err) => {
-        console.log('MongoDB Connection Error:', err && err.message ? err.message : err);
-    });
+mongoose.connect('mongodb://127.0.0.1:27017/foodDB')
+    .then(() => console.log("MongoDB Connected Successfully"))
+    .catch(err => console.log("Connection Error:", err.message))
 
 app.use(cors());
-app.use(express.json())
+app.use(express.json());
 
-app.post("/insert", async (req,res) => {
-    const foodName = req.body.foodName;
-    const daySinceIate = req.body.daySinceIate;
-    const food = new FoodModel({ foodName: foodName, daySinceIate: daySinceIate });
+// INSERT
+app.post("/insert", async (req, res) => {
+    const { foodName, daySinceIate } = req.body;
+
+    if (!foodName || !foodName.trim()) {
+        return res.status(400).send("Food name is required");
+    }
+    if (daySinceIate === undefined || daySinceIate === "") {
+        return res.status(400).send("Days since I ate is required");
+    }
+
     try {
+        const food = new FoodModel({
+            foodName,
+            daySinceIate: parseInt(daySinceIate)
+        });
+
         await food.save();
-        res.status(201).send("Food item inserted successfully");
+        res.status(201).json(food);
     } catch (error) {
-        res.status(500).send("Error inserting food item");
+        res.status(500).json({ error: error.message });
     }
 });
 
-app.get('/read', async (req,res) => {
+// READ
+app.get("/read", async (req, res) => {
     try {
-        const fooditems = await FoodModel.find({});
-        res.status(200).json(fooditems);
+        const foods = await FoodModel.find({});
+        res.json(foods);
     } catch (error) {
-        res.status(500).send("Error reading food items");
+        res.status(500).send("Error fetching data");
     }
 });
 
-app.put('/update/:id', async (req, res) => {
+// UPDATE
+app.put("/update/:id", async (req, res) => {
     const id = req.params.id;
-    const daySinceIate = req.body.daySinceIate;
+    const { foodName, daySinceIate } = req.body;
+
     try {
-        await FoodModel.findByIdAndUpdate(id, { daySinceIate: daySinceIate });
-        res.status(200).send('Food item updated successfully');
+        await FoodModel.findByIdAndUpdate(id, {
+            foodName,
+            daySinceIate
+        });
+
+        res.send("Food updated");
     } catch (error) {
-        console.error('Update error:', error);
-        res.status(500).send('Error updating food item');
+        res.status(500).send("Update error");
     }
 });
 
-app.delete('/delete/:id', async (req,res) => {
+// DELETE
+app.delete("/delete/:id", async (req, res) => {
     const id = req.params.id;
+
     try {
         await FoodModel.findByIdAndDelete(id);
-        res.status(200).send("Food item deleted successfully");
+        res.send("Food deleted");
     } catch (error) {
-        res.status(500).send("Error deleting food item");
+        res.status(500).send("Delete error");
     }
 });
 
-app.listen(PORT,()=>{
-    console.log(`Server is running on port ${PORT}`)
-    //console.log(`MongoDB Connection State: ${mongoose.connection.readyState === 1 ? ' Connected' : ' Disconnected'}`)
-})
-
-// Global handlers to surface errors that may cause the process to exit
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason)
-})
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception thrown:', err)
-})
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
