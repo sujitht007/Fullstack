@@ -1,0 +1,29 @@
+.app-container {
+  justify-content: center;
+  color: black;
+  text-align: center;
+  
+}
+h1{
+  color: darkblue;
+}
+*{
+  background-color: palegoldenrod;
+}
+button{
+  background-color: yellow;
+}
+input{
+  background-color: white;
+}
+h2{
+  color: darkred;
+}
+
+.food-card{
+  border: 2px solid black;
+  border-width: 10px;
+  padding: 20px;
+  box-sizing: border-box;
+
+}
